@@ -1,0 +1,32 @@
+.user-gallery {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  overflow-x: scroll;
+  width: 100%;
+  h2 {
+
+  }
+}
+
+#root .user-div:nth-child(even) li {
+  background-color: grey;
+}
+
+.album {
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  list-style: none;
+  min-width: 10%;
+}
+
+.album-id {
+
+}
+
+.album-title {
+  text-align: center;
+}

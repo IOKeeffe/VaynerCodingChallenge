@@ -6,6 +6,7 @@ class Gallery {
     this.userCount = userCount;
     this.jsonUrl = 'https://jsonplaceholder.typicode.com';
     this.setUser = this.setUser.bind(this);
+    this.sendOwnerChange = this.sendOwnerChange.bind(this);
     this.dropAlbum = this.dropAlbum.bind(this);
     this.dragAlbum = this.dragAlbum.bind(this);
     for (let i = 0; i < userCount; i++) {
@@ -15,19 +16,22 @@ class Gallery {
 
   buildAlbums() {
     this.users.forEach((user) => {
-      let albumHtml = this.buildUserAlbums(user);
-      $('#root').append(`
-        <h2>${user.name}</h2>
-        <ul class='user-gallery'>
-          ${albumHtml}
-        </ul>`)
+      let $userDiv = $(`<section class='user-div'> <h2>${user.name}</h2> </section>`);
+      let $user = $(`<ul class='user-gallery' id=${'user-gallery-'+user.id}>
+        </ul>`);
+        $user.data('user', user)
+        this.buildUserAlbums($user);
+        $userDiv.append($user);
+      $('#root').append($userDiv);
     });
     this.addDragListeners();
   }
 
+  
+
   addDragListeners() {
-    $('.album').on('drop', this.dropAlbum);
     $('.album').on('dragstart', this.dragAlbum);
+    $('.user-gallery').on('drop', this.dropAlbum);
     $('.user-gallery').on('dragover', this.allowDrop)
   }
 
@@ -42,33 +46,37 @@ class Gallery {
 
   dropAlbum(ev) {
     ev.preventDefault();
-    this.changeAlbumOwner(this.dragging, ev.target);
+    this.sendOwnerChange(this.dragging, ev.currentTarget);
   }
 
-  changeAlbumOwner(oldAlbum, newAlbum) {
-    oldAlbum.userId = newAlbum.userId;
+  sendOwnerChange(oldAlbumElement, newGalleryElement) {
+    let oldAlbum = $(oldAlbumElement).data('album')
+    let newOwnerId = $(newGalleryElement).data('user').id
+    oldAlbum.userId = newOwnerId
     $.ajax({
       method: 'PATCH',
-      url: url: this.jsonUrl + `/albums/${oldAlbum.id}`,
-      data: oldAlbum
+      url: this.jsonUrl + `/albums/${oldAlbum.id}`,
+      data: oldAlbum,
     }).then(data => {
-      debugger;
-    })
+      this.repositionAlbum(oldAlbumElement, newGalleryElement)
+    });
   }
 
-  buildUserAlbums(user) {
-    let html = '';
-    let dragAlbum = this.dragAlbum;
-    const onDragStart = function(ev) {
-      this.dragAlbum(ev);
-    }
+  repositionAlbum(oldAlbumElement, newGalleryElement) {
+    $(oldAlbumElement).detach();
+    newGalleryElement.append(oldAlbumElement);
+  }
+
+  buildUserAlbums($user) {
+    let user = $user.data('user');
     user.albums.forEach((album) => {
-      html += `<li class='album' id=${'album-' + album.id} draggable='true'>
+      let $album = $(`<li class='album' id=${'album-' + album.id} draggable='true'>
           <h3 class='album-id'>${album.id}</h3>
           <h3 class='album-title'>${album.title}</h3>
-        </li>`
+        </li>`);
+      $album.data("album", album);
+      $user.append($album);
     });
-    return html;
   }
 
   loadUser(userId) {
