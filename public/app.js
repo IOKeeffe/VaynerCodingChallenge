@@ -6,6 +6,8 @@ class Gallery {
     this.userCount = userCount;
     this.jsonUrl = 'https://jsonplaceholder.typicode.com';
     this.setUser = this.setUser.bind(this);
+    this.dropAlbum = this.dropAlbum.bind(this);
+    this.dragAlbum = this.dragAlbum.bind(this);
     for (let i = 0; i < userCount; i++) {
       this.loadUser(i+1);
     }
@@ -20,12 +22,38 @@ class Gallery {
           ${albumHtml}
         </ul>`)
     });
-    // $('.album').forEach((album) => {album.ondragstart = this.dragAlbum});
-    $('.album').on("dragstart", this.dragAlbum);
+    this.addDragListeners();
+  }
+
+  addDragListeners() {
+    $('.album').on('drop', this.dropAlbum);
+    $('.album').on('dragstart', this.dragAlbum);
+    $('.user-gallery').on('dragover', this.allowDrop)
   }
 
   dragAlbum(ev) {
-    debugger;
+    this.dragging = ev.target;
+  }
+
+
+  allowDrop(ev) {
+    ev.preventDefault();
+  }
+
+  dropAlbum(ev) {
+    ev.preventDefault();
+    this.changeAlbumOwner(this.dragging, ev.target);
+  }
+
+  changeAlbumOwner(oldAlbum, newAlbum) {
+    oldAlbum.userId = newAlbum.userId;
+    $.ajax({
+      method: 'PATCH',
+      url: url: this.jsonUrl + `/albums/${oldAlbum.id}`,
+      data: oldAlbum
+    }).then(data => {
+      debugger;
+    })
   }
 
   buildUserAlbums(user) {
@@ -35,7 +63,7 @@ class Gallery {
       this.dragAlbum(ev);
     }
     user.albums.forEach((album) => {
-      html += `<li class='album' draggable='true'>
+      html += `<li class='album' id=${'album-' + album.id} draggable='true'>
           <h3 class='album-id'>${album.id}</h3>
           <h3 class='album-title'>${album.title}</h3>
         </li>`
